@@ -1,0 +1,4 @@
+build/_workspace/
+build/_workspace_win/
+build/bin/
+.DS_Store
