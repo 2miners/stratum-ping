@@ -1,3 +1,9 @@
+/*
+	stratum-ping
+
+	Copyright ©2021, 2Miners.com
+*/
+
 package main
 
 import (
