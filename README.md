@@ -23,6 +23,8 @@ Usage of ./stratum-ping:
         stratum type: stratum1, stratum2 (default "stratum2")
   -tls
         use TLS
+  -dontsleep
+        don't wait 1s between pings
   -u string
         login (default "0x63a14c53f676f34847b5e6179c4f5f5a07f0b1ed")
 
