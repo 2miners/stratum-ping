@@ -9,9 +9,9 @@ package main
 import (
 	"bufio"
 	"crypto/tls"
+	"encoding/json"
 	"flag"
 	"fmt"
-	"encoding/json"
 	"net"
 	"strconv"
 	"strings"
@@ -19,15 +19,16 @@ import (
 )
 
 type StratumPinger struct {
-	login   string
-	pass    string
-	count   int
-	ipv6    bool
-	host    string
-	port    string
-	addr    *net.IPAddr
-	proto   string
-	tls     bool
+	login     string
+	pass      string
+	count     int
+	ipv6      bool
+	host      string
+	port      string
+	addr      *net.IPAddr
+	proto     string
+	tls       bool
+	dontsleep bool
 }
 
 func main() {
@@ -37,6 +38,7 @@ func main() {
 	argV6 := flag.Bool("6", false, "use ipv6")
 	argProto := flag.String("t", "stratum2", "stratum type: stratum1, stratum2")
 	argTLS := flag.Bool("tls", false, "use TLS")
+	argDontSleep := flag.Bool("dontsleep", false, "don't wait 1s between pings")
 
 	flag.Parse()
 
@@ -83,6 +85,7 @@ func main() {
 		ipv6:  *argV6,
 		proto: *argProto,
 		tls:   *argTLS,
+		dontsleep: *argDontSleep,
 	}
 
 	if err := pinger.Do(); err != nil {
@@ -107,8 +110,8 @@ func (p *StratumPinger) Do() error {
 
 	min := time.Duration(time.Hour)
 	max := time.Duration(0)
-	avg := time.Duration(0)
-	avgCount := 0
+	sum := time.Duration(0)
+	count := 0
 	success := 0
 	start := time.Now()
 
@@ -124,17 +127,19 @@ func (p *StratumPinger) Do() error {
 			if elapsed < min {
 				min = elapsed
 			}
-			avg += elapsed
-			avgCount++
+			sum += elapsed
+			count++
 			success++
 		}
-		time.Sleep(1 * time.Second)
+		if !p.dontsleep {
+			time.Sleep(1 * time.Second)
+		}
 	}
 	fmt.Printf("\n--- %s ping statistics ---\n", p.host)
 	loss := 100 - int64(float64(success) / float64(p.count) * 100.0)
 	fmt.Printf("%d packets transmitted, %d received, %d%% packet loss, time %s\n", p.count, success, loss, time.Since(start))
 	if success > 0 {
-		fmt.Printf("min/avg/max = %s, %s, %s\n", min.String(), (avg / time.Duration(avgCount)).String(), max.String())
+		fmt.Printf("min/avg/max/sum = %s, %s, %s, %s\n", min.String(), (sum / time.Duration(count)).String(), max.String(), sum.String())
 	}
 	return nil
 }
