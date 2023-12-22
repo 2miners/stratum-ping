@@ -3,10 +3,7 @@
 GOBIN = build/bin
 
 all: 
-	build/env.sh go get -v ./...
-
-rebuild: all
-	build/env.sh go get -a -v ./...
+	build/env.sh go build -v -o build/bin/stratum-ping
 
 debug: 
 	build/env.sh go get -race -v ./...
