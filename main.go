@@ -1,7 +1,7 @@
 /*
 	stratum-ping
 
-	Copyright ©2021, 2Miners.com
+	Copyright ©2021-2026, 2Miners.com
 */
 
 package main
@@ -9,25 +9,27 @@ package main
 import (
 	"bufio"
 	"crypto/tls"
+	"encoding/json"
 	"flag"
 	"fmt"
-	"encoding/json"
 	"net"
 	"strconv"
 	"strings"
 	"time"
 )
 
+const version = "1.1.0"
+
 type StratumPinger struct {
-	login   string
-	pass    string
-	count   int
-	ipv6    bool
-	host    string
-	port    string
-	addr    *net.IPAddr
-	proto   string
-	tls     bool
+	login string
+	pass  string
+	count int
+	ipv6  bool
+	host  string
+	port  string
+	addr  *net.IPAddr
+	proto string
+	tls   bool
 }
 
 func main() {
@@ -37,8 +39,14 @@ func main() {
 	argV6 := flag.Bool("6", false, "use ipv6")
 	argProto := flag.String("t", "stratum2", "stratum type: stratum1, stratum2")
 	argTLS := flag.Bool("tls", false, "use TLS")
+	argVersion := flag.Bool("version", false, "print version and exit")
 
 	flag.Parse()
+
+	if *argVersion {
+		fmt.Printf("stratum-ping %s\n", version)
+		return
+	}
 
 	argServer := flag.Arg(0)
 
@@ -65,13 +73,13 @@ func main() {
 	}
 
 	switch *argProto {
-		case "stratum1": 
-			fallthrough
-		case "stratum2":
-			break
-		default:
-			fmt.Printf("Invalid stratum type specified\n\n")
-			return
+	case "stratum1":
+		fallthrough
+	case "stratum2":
+		break
+	default:
+		fmt.Printf("Invalid stratum type specified\n\n")
+		return
 	}
 
 	pinger := StratumPinger{
@@ -131,7 +139,7 @@ func (p *StratumPinger) Do() error {
 		time.Sleep(1 * time.Second)
 	}
 	fmt.Printf("\n--- %s ping statistics ---\n", p.host)
-	loss := 100 - int64(float64(success) / float64(p.count) * 100.0)
+	loss := 100 - int64(float64(success)/float64(p.count)*100.0)
 	fmt.Printf("%d packets transmitted, %d received, %d%% packet loss, time %s\n", p.count, success, loss, time.Since(start))
 	if success > 0 {
 		fmt.Printf("min/avg/max = %s, %s, %s\n", min.String(), (avg / time.Duration(avgCount)).String(), max.String())
@@ -169,7 +177,9 @@ func (p *StratumPinger) DoPing() (time.Duration, error) {
 	var err error
 	var conn net.Conn
 	if p.tls {
-		cfg :=  &tls.Config{InsecureSkipVerify: true}
+		// Certificate is not verified on purpose: the tool measures Stratum
+		// response time, and pools often use self-signed certificates.
+		cfg := &tls.Config{InsecureSkipVerify: true}
 		conn, err = tls.Dial(network, dial, cfg)
 	} else {
 		conn, err = net.Dial(network, dial)
@@ -177,6 +187,7 @@ func (p *StratumPinger) DoPing() (time.Duration, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer conn.Close()
 
 	enc := json.NewEncoder(conn)
 	buff := bufio.NewReaderSize(conn, 1024)
@@ -189,10 +200,10 @@ func (p *StratumPinger) DoPing() (time.Duration, error) {
 	var req map[string]interface{}
 
 	switch p.proto {
-		case "stratum1":
-			req = map[string]interface{}{"id":1, "jsonrpc": "2.0", "method": "eth_submitLogin", "params": []string{p.login,p.pass}}
-		case "stratum2":
-			req = map[string]interface{}{"id": 1, "method": "mining.subscribe", "params": []string{"stratum-ping/1.0.0", "EthereumStratum/1.0.0"}}
+	case "stratum1":
+		req = map[string]interface{}{"id": 1, "jsonrpc": "2.0", "method": "eth_submitLogin", "params": []string{p.login, p.pass}}
+	case "stratum2":
+		req = map[string]interface{}{"id": 1, "method": "mining.subscribe", "params": []string{"stratum-ping/" + version, "EthereumStratum/1.0.0"}}
 	}
 
 	start := time.Now()
@@ -204,7 +215,6 @@ func (p *StratumPinger) DoPing() (time.Duration, error) {
 		return 0, err
 	}
 	elapsed := time.Since(start)
-	conn.Close()
 
 	return elapsed, nil
 }

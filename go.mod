@@ -1,3 +1,3 @@
 module github.com/2miners/stratum-ping
 
-go 1.18
+go 1.27
