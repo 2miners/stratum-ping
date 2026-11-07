@@ -1,16 +1,15 @@
-.PHONY: all test clean
+.PHONY: all test release clean
 
 GOBIN = build/bin
 
-all: 
-	build/env.sh go build -v -o build/bin/stratum-ping
-
-debug: 
-	build/env.sh go get -race -v ./...
+all:
+	go build -trimpath -o $(GOBIN)/stratum-ping
 
 test: all
-	build/env.sh go test -count=1 -timeout 0 -v ./...
+	go test -count=1 -v ./...
+
+release:
+	build/release.sh
 
 clean:
-	build/env.sh go clean -cache -modcache
-	rm -fr build/_workspace/pkg/ $(GOBIN)/*
+	rm -fr $(GOBIN) build/dist

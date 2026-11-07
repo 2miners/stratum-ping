@@ -10,6 +10,21 @@ We use this tool at 2Miners internally to measure the performance of our pools. 
 
 **TL;DR**: The ping to the pool server's box is not as significant as the actual response time through Stratum.
 
+## Installation
+
+Download a ready-made binary for Linux, macOS (Intel and Apple Silicon) or Windows from the [Releases](https://github.com/2miners/stratum-ping/releases) page. Each release includes `SHA256SUMS` to verify the download.
+
+To build from source you need Go 1.27 or newer:
+
+```
+git clone https://github.com/2miners/stratum-ping.git
+cd stratum-ping
+make            # binary in build/bin/stratum-ping
+make release    # archives for all platforms in build/dist
+```
+
+On Windows run `build_win.bat`.
+
 ## Usage
 
 ```
@@ -25,6 +40,8 @@ Usage of ./stratum-ping:
         use TLS
   -u string
         login (default "0x63a14c53f676f34847b5e6179c4f5f5a07f0b1ed")
+  -version
+        print version and exit
 
 ```
 
@@ -75,6 +92,10 @@ eth.2miners.com (2001:41d0:700:3441::): seq=4, time=171.775µs
 min/avg/max = 166.971µs, 175.771µs, 185.733µs
 ```
 
+## Security
+
+See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
+
 ## Copyright
 
-Copyright ©2021, [2Miners.com](https://2miners.com). All rights reserved.
+Copyright ©2021-2026, [2Miners.com](https://2miners.com). All rights reserved.
